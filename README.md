@@ -4,7 +4,7 @@ MABE is a parameterizable synthetic dataset generator for AI-driven cyberattacks
 
 ## Why MABE Exists
 
-As of 2025–2026, no public dataset captures the behavioral characteristics of AI-driven attacks — specifically their velocity, exhaustive network exploration patterns, and non-goal-directed traversal behavior. Real-world AI attack telemetry is either classified or proprietary. MABE addresses this gap through synthetic generation from first principles, with every behavioral parameter traceable to a published empirical source.
+As of May 2026, no public (synthetic or real-world) dataset captures the behavioral characteristics of AI-driven attacks — specifically their velocity, exhaustive network exploration patterns, and non-goal-directed traversal behavior. MABE addresses this gap through synthetic generation from first principles, with every behavioral parameter traceable to a published empirical source.
 
 **Two key behavioral signatures distinguish AI-driven attacks from human-operated ones:**
 
