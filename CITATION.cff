@@ -5,7 +5,7 @@ authors:
 title: "MABE: Malicious Agent Behavior Emulator"
 version: 1.0.0
 date-released: 2026
-url: "https://github.com/lucapopescu/mabe"
+url: "https://github.com/popescoup/Malicious-Agent-Behavior-Emulator"
 abstract: >
   MABE is a parameterizable synthetic dataset generator for AI-driven
   cyberattacks. It produces labeled event logs emulating the behavioral

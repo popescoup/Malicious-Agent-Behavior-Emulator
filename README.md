@@ -191,7 +191,7 @@ All new behavioral parameters must include an empirical source citation in `beha
   author = {Popescu, Luca},
   title  = {MABE: Malicious Agent Behavior Emulator},
   year   = {2026},
-  url    = {https://github.com/lucapopescu/mabe}
+  url    = {https://github.com/popescoup/Malicious-Agent-Behavior-Emulator}
 }
 ```
 
