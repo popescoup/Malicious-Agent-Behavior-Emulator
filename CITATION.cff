@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use MABE in your research, please cite it as below."
+authors:
+  - name: "Luca Popescu"
+title: "MABE: Malicious Agent Behavior Emulator"
+version: 1.0.0
+date-released: 2026
+url: "https://github.com/lucapopescu/mabe"
+abstract: >
+  MABE is a parameterizable synthetic dataset generator for AI-driven
+  cyberattacks. It produces labeled event logs emulating the behavioral
+  signatures of an AI agent conducting internal network enumeration from
+  an assumed breach entry point, contrasted against realistic background
+  benign user activity. Empirical parameters are grounded in published
+  sources including Anthropic GTG-1002 (November 2025), SANS/Lee
+  (December 2025), Dragos (May 2026), and academic research on
+  LLM-driven autonomous penetration testing.
+keywords:
+  - cybersecurity
+  - synthetic dataset
+  - AI-driven attacks
+  - lateral movement
+  - behavioral detection
+  - SIEM
+  - SIFT forensics
+license: MIT

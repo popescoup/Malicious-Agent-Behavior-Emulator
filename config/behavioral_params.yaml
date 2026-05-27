@@ -1,0 +1,189 @@
+# MABE Behavioral Parameters
+# ===========================
+# Every parameter is annotated with its empirical source.
+# See Section 2 of the spec for full citations.
+#
+# Parameters marked DEFERRED are fully specified but not implemented in v1.0.
+# They are documented here so future development sessions can implement them
+# without redesign. See Section 15 (Future Extensions) for context.
+
+# ---------------------------------------------------------------------------
+# AI Attacker Parameters
+# ---------------------------------------------------------------------------
+
+ai_attacker:
+
+  # ── Velocity ─────────────────────────────────────────────────────────────
+  # Source: SANS/Lee — 47-158x human speed; GTG-1002 — "multiple operations
+  # per second". Conservative 47x multiplier applied.
+  inter_event_ms_median: 800
+  inter_event_ms_distribution: lognormal
+  inter_event_ms_sigma: 0.6
+  inter_event_ms_floor_ms: 50
+  # lognormal with median=800ms, sigma=0.6 produces realistic sub-second
+  # bursts with occasional longer pauses between phases. Floor of 50ms
+  # prevents timestamp collisions in Windows Event Log format (practical
+  # resolution ~100ms) and avoids sub-10ms values that cannot be meaningfully
+  # distinguished.
+
+  # ── Traversal ────────────────────────────────────────────────────────────
+  # Source: GTG-1002 autonomous exhaustive enumeration phase —
+  # "systematically tested authentication against internal APIs, database
+  # systems, container registries, and logging infrastructure"
+  probe_all_neighbors: true
+  neighbor_priority_order:
+    - domain_controller
+    - database
+    - container_registry
+    - logging_infrastructure
+    - api_endpoint
+    - file_server
+    - workstation
+  # High-value nodes are probed first within each BFS frontier.
+  # Priority ordering is applied AFTER ACL filtering — the agent only sees
+  # and prioritizes neighbors that are reachable under current ACL rules and
+  # credential state. Out-of-ACL probes occur exclusively through the scope
+  # expansion module.
+
+  # ── Credential behavior ──────────────────────────────────────────────────
+  # Source: GTG-1002 credential-driven lateral traversal phase;
+  # arXiv 2502.04227 (cochise) — privilege escalation through credential
+  # chaining.
+  max_auth_retries: 3
+  # Number of failed auth attempts with the same protocol before switching
+  # to the next protocol in the fallback sequence. After all protocols are
+  # exhausted, the node is marked unreachable.
+
+  credential_harvest_probability: 0.3
+  # Probability that a successfully authenticated node yields a harvestable
+  # credential via auth success path.
+
+  file_credential_harvest_probability: 0.15
+  # Probability that a file_access event on a file_server node yields a
+  # credential via content inspection — independent of auth success. Models
+  # the arXiv 2310.11409 finding that LLMs discover credentials through
+  # document/file inspection, not only authentication.
+
+  file_access_events_per_visit: 3
+  # Number of file_access events generated per file_server node visit.
+  # Effective per-visit harvest probability:
+  # 1 - (1 - 0.15)^3 ≈ 0.39 per file server visit.
+
+  # ── Credential privilege levels ──────────────────────────────────────────
+  # Source: arXiv 2502.04227 — AS-REP Kerberos Roasting followed by
+  # password cracking to escalate privilege through credential chaining.
+  initial_credential_privilege: standard_user
+
+  credential_privilege_weights_by_node_type:
+    workstation:            {standard_user: 0.80, service_account: 0.15, domain_admin: 0.05}
+    file_server:            {standard_user: 0.70, service_account: 0.25, domain_admin: 0.05}
+    api_endpoint:           {standard_user: 0.50, service_account: 0.45, domain_admin: 0.05}
+    database:               {standard_user: 0.20, service_account: 0.70, domain_admin: 0.10}
+    container_registry:     {standard_user: 0.10, service_account: 0.75, domain_admin: 0.15}
+    domain_controller:      {standard_user: 0.00, service_account: 0.20, domain_admin: 0.80}
+    logging_infrastructure: {standard_user: 0.05, service_account: 0.50, domain_admin: 0.45}
+
+  # ── Protocol fallback (adaptive tool switching) ───────────────────────────
+  # Source: Dragos water utility — "tools were generated, tested, and refined
+  # during the attack based on what worked."
+  protocol_fallback_sequences:
+    windows_host:   [kerberos, ntlm, basic]
+    linux_host:     [ssh, basic]
+    database:       [windows_auth, sql_auth, basic]
+    api_endpoint:   [oauth, token, basic]
+    registry:       [token, basic]
+  # On auth failure against a node, the agent works through the fallback
+  # sequence for that node type before marking the node unreachable.
+  # max_auth_retries applies per-protocol (not total across sequence).
+
+  # ── Scope expansion ───────────────────────────────────────────────────────
+  # Source: Dragos water utility — AI spontaneously identified OT-adjacent
+  # assets not part of the stated objective.
+  scope_expansion_probability: 0.2
+  # Rolled ONCE at session initialization. If true, one adjacent out-of-scope
+  # segment is selected at random and added to the BFS frontier.
+
+  # ── Session scheduling ───────────────────────────────────────────────────
+  # Source: GTG-1002 — attacker operates during active campaign windows,
+  # blending with business-hours activity. Slightly higher than benign user
+  # (5%) to reflect AI attackers are not constrained by human work schedules.
+  after_hours_activity_probability: 0.10
+
+  # ── Hallucination/retry ───────────────────────────────────────────────────
+  # Source: GTG-1002 — "Claude frequently overstated findings and occasionally
+  # fabricated data, claiming to have obtained credentials that didn't work"
+  false_positive_rate: 0.15
+  # Fraction of auth_attempt events that would otherwise be marked success=True
+  # that are instead hallucinated successes. Hallucination check fires FIRST,
+  # before BFS queue addition and before credential_harvest_probability roll.
+
+  # ── DEFERRED FEATURES (v2.0) ──────────────────────────────────────────────
+  # Multi-session continuity
+  # Source: GTG-1002 — "Claude maintained persistent operational context
+  # across sessions spanning multiple days, enabling complex campaigns to
+  # resume seamlessly."
+  #
+  # enable_session_continuity: false
+  # session_state_path: output/session_state.json
+
+
+# ---------------------------------------------------------------------------
+# Benign User Parameters
+# ---------------------------------------------------------------------------
+
+benign_user:
+
+  # ── Timing ───────────────────────────────────────────────────────────────
+  # Source: SANS/Lee — human breakout time baseline ~79 minutes. Benign users
+  # are not performing lateral movement; timing reflects normal work activity.
+  inter_event_ms_median: 180000       # 3 minutes
+  inter_event_ms_distribution: lognormal
+  inter_event_ms_sigma: 1.2
+  # Higher sigma than AI attacker — human timing is irregular. Events cluster
+  # around work tasks with longer gaps between them.
+
+  # ── Auth failure rate ─────────────────────────────────────────────────────
+  # Source: Enterprise SIEM baseline studies — benign auth failure rates of
+  # 1-3% are typical, caused by expired passwords, cached credentials, and
+  # mistyped passwords. 2% used as a realistic mid-range default.
+  auth_failure_rate: 0.02
+
+  # ── Business hours ────────────────────────────────────────────────────────
+  work_hours_start: 8                 # 08:00 local
+  work_hours_end: 18                  # 18:00 local
+  work_days: [Mon, Tue, Wed, Thu, Fri]
+  after_hours_activity_probability: 0.05
+  # Small chance of activity outside business hours — reflects occasional
+  # evening work, not an attack signal.
+
+  # ── Traversal ────────────────────────────────────────────────────────────
+  # Source: LMDG BDE behavioral model — role-based, purposeful.
+  typical_host_count: 4
+  # Number of distinct hosts a user regularly accesses. Most users touch
+  # 3-5 hosts (workstation, file server, one or two application servers).
+
+  revisit_probability: 0.75
+  # Probability of returning to a previously visited host rather than
+  # exploring a new one. Humans are habitual.
+
+  new_host_probability: 0.05
+  # Probability of accessing a host never visited before. Low but non-zero —
+  # represents legitimate new access.
+
+  # ── Role distribution ─────────────────────────────────────────────────────
+  roles:
+    - name: developer
+      weight: 0.20
+      typical_destinations: [workstation, file_server, api_endpoint, container_registry]
+
+    - name: analyst
+      weight: 0.20
+      typical_destinations: [workstation, file_server, database]
+
+    - name: admin
+      weight: 0.10
+      typical_destinations: [workstation, domain_controller, file_server, logging_infrastructure]
+
+    - name: general_staff
+      weight: 0.50
+      typical_destinations: [workstation, file_server]

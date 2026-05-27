@@ -1,0 +1,93 @@
+topology:
+
+  segments:
+    - id: dmz
+      subnet: 10.0.1.0/24
+    - id: corporate
+      subnet: 10.0.2.0/24
+    - id: data_tier
+      subnet: 10.0.3.0/24
+    - id: infrastructure
+      subnet: 10.0.4.0/24
+
+  node_types:
+    domain_controller:
+      count: 2
+      segment: infrastructure
+      services: [ldap, kerberos, dns]
+      auth_protocols: [kerberos, ntlm]
+      high_value: true
+      required_privilege: domain_admin
+
+    database:
+      count: 4
+      segment: data_tier
+      services: [mssql, postgresql]
+      auth_protocols: [sql_auth, windows_auth]
+      high_value: true
+      required_privilege: service_account
+
+    container_registry:
+      count: 2
+      segment: infrastructure
+      services: [docker_registry, helm_registry]
+      auth_protocols: [token, basic]
+      high_value: true
+      required_privilege: service_account
+
+    api_endpoint:
+      count: 6
+      segment: corporate
+      services: [http, https]
+      auth_protocols: [oauth, basic]
+      high_value: false
+      required_privilege: standard_user
+
+    file_server:
+      count: 4
+      segment: corporate
+      services: [smb, nfs]
+      auth_protocols: [ntlm, kerberos]
+      high_value: false
+      required_privilege: standard_user
+
+    logging_infrastructure:
+      count: 2
+      segment: infrastructure
+      services: [syslog, http]
+      auth_protocols: [token]
+      high_value: true
+      required_privilege: service_account
+
+    workstation:
+      count: 40
+      segment: corporate
+      services: [rdp, smb]
+      auth_protocols: [ntlm, kerberos]
+      high_value: false
+      required_privilege: standard_user
+
+  acl_rules:
+    - from: dmz
+      to: corporate
+      permitted_protocols: [http, https]
+
+    - from: corporate
+      to: corporate
+      permitted_protocols: [smb, http, https, rdp, ntlm, kerberos]
+
+    - from: corporate
+      to: data_tier
+      permitted_protocols: [mssql, postgresql, http]
+
+    - from: corporate
+      to: infrastructure
+      permitted_protocols: [ldap, kerberos, dns, smb]
+
+    - from: infrastructure
+      to: corporate
+      permitted_protocols: [ldap, kerberos, dns]
+
+    - from: infrastructure
+      to: data_tier
+      permitted_protocols: [mssql, postgresql]
