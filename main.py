@@ -13,7 +13,7 @@ Options
                       (default: config/topology_enterprise.yaml)
     --params          Path to behavioral params YAML
                       (default: config/behavioral_params.yaml)
-    --sessions-benign Number of benign sessions to generate (default: 50)
+    --sessions-benign Number of benign sessions to generate (default: 150):
     --sessions-attack Number of attack sessions to generate (default: 10)
     --seed            Random seed for reproducibility (default: 42)
     --formats         Comma-separated output formats (default: splunk,evtx)
@@ -80,7 +80,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=int,
         default=50,
         metavar="N",
-        help="Number of benign sessions to generate (default: 50)",
+        help="Number of benign sessions to generate (default: 150)",
     )
     parser.add_argument(
         "--sessions-attack",
