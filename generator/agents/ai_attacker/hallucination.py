@@ -131,6 +131,11 @@ class HallucinationModule:
         )
         self._rng = rng
         self._credential_counter: int = 1  # cred_001 is the foothold seed
+        # Safe default — overridden by set_file_harvest_probability() before
+        # check_file_harvest() is ever called in normal operation. Default of
+        # 0.0 means no file harvests occur if the setter is never called,
+        # which is safe (silent degradation rather than AttributeError).
+        self._params_file_harvest_probability: float = 0.0
 
     # ------------------------------------------------------------------
     # Public interface

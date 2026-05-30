@@ -310,6 +310,11 @@ class BFSTraversalAgent:
         # Record arrival time for dwell_ms computation
         arrival_time: datetime = self._velocity.current_time()
 
+        # Record event list length at visit start — used by
+        # _update_fan_out_count to identify exactly which events
+        # belong to this visit without relying on fan_out heuristics.
+        visit_start_index: int = len(self._events)
+
         # ── Step 1: DNS enumeration ───────────────────────────────────
         if node_id not in self._dns_resolved:
             self._dns_resolved.add(node_id)
@@ -390,7 +395,7 @@ class BFSTraversalAgent:
                 self._frontier.append(neighbor_id)
 
         # Update fan_out_count on all events from this node visit
-        self._update_fan_out_count(node_id, fan_out_count)
+        self._update_fan_out_count(visit_start_index, fan_out_count)
 
     # ------------------------------------------------------------------
     # Auth attempt helpers
@@ -996,7 +1001,9 @@ class BFSTraversalAgent:
     # Post-processing
     # ------------------------------------------------------------------
 
-    def _update_fan_out_count(self, node_id: str, fan_out_count: int) -> None:
+    def _update_fan_out_count(
+        self, visit_start_index: int, fan_out_count: int
+    ) -> None:
         """
         Backfill fan_out_count on all events generated during this node visit.
 
@@ -1005,22 +1012,18 @@ class BFSTraversalAgent:
         enumerated). This method updates all events from this visit once the
         final count is known.
 
-        Only events where src_host matches the current traversal source are
-        updated — events emitted with the foothold as src (DNS, service probes)
-        correctly reflect the node being enumerated.
+        Uses visit_start_index (the length of self._events at the start of
+        _visit_node) to identify exactly which events belong to this visit.
+        This is precise and does not rely on fan_out_count values as a proxy,
+        fixing the heuristic stop-condition bug where the backward scan could
+        terminate early if a prior visit's events had non-zero fan_out counts.
         """
         if fan_out_count == 0:
             return
-        # Update events emitted during this node visit that still have
-        # fan_out_count=0 and src_host pointing to the foothold
-        # (proxy for "events from this visit")
-        # We use a backward scan and stop when we hit events from a prior node
-        for event in reversed(self._events):
-            if event.fan_out_count == 0 and event.is_attack:
-                # Mutate via dataclass — Event fields are not frozen
+        # Update only events emitted during this visit (index-based slice)
+        for event in self._events[visit_start_index:]:
+            if event.is_attack:
                 object.__setattr__(event, "fan_out_count", fan_out_count)
-            elif event.fan_out_count != 0:
-                break
 
 
 # ---------------------------------------------------------------------------
