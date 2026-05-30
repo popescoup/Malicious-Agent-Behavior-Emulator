@@ -571,7 +571,7 @@ class Validator:
                         parse(sorted_events[i].timestamp) -
                         parse(sorted_events[i-1].timestamp)
                     ).total_seconds()
-                    if gap_s > 7200:  # 2-hour threshold
+                    if gap_s > 32400:  # 9-hour threshold
                         check.fail(
                             f"Session {session_id[:8]}: gap of "
                             f"{gap_s/3600:.1f}h between consecutive events "

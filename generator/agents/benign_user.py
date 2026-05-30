@@ -176,7 +176,7 @@ class BenignUserAgent:
         current_time: datetime = session_start
 
         # Session duration: 1–3 hours, sampled uniformly
-        session_duration_s = self._rng.uniform(3600, 10800)
+        session_duration_s = self._rng.uniform(3600, 28800)
         session_end = session_start + timedelta(seconds=session_duration_s)
 
         current_node = self._home_node

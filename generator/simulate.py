@@ -144,7 +144,7 @@ def run_simulation(
     topology_path: Path | str | None = None,
     params_path: Path | str | None = None,
     vocab_path: Path | str | None = None,
-    sessions_benign: int = 50,
+    sessions_benign: int = 150,
     sessions_attack: int = 10,
     seed: int = 42,
     simulation_date: str = "2025-11-14",
@@ -161,9 +161,9 @@ def run_simulation(
     vocab_path : Path | str | None
         Path to vocabulary.json. Defaults to vocabulary.json at repo root.
     sessions_benign : int
-        Number of benign user sessions to generate. Default: 50.
+        Number of benign user sessions to generate. Default: 200.
     sessions_attack : int
-        Number of AI attacker sessions to generate. Default: 10.
+        Number of AI attacker sessions to generate. Default: 5.
     seed : int
         Base random seed for full reproducibility. Default: 42.
     simulation_date : str
